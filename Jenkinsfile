@@ -40,5 +40,20 @@ pipeline {
                 }
             }
         }
+        stage("proxy config") {
+            agent any
+            steps {
+                withCredentials(
+                    [
+                        string(credentialsId: "production_ip", variable: 'SERVER_IP'),
+                        sshUserPrivateKey(credentialsId: "production_key", keyFileVariable: 'SERVER_KEY', usernameVariable: 'SERVER_USERNAME')
+                    ]
+                ) {
+                    sh 'scp -i ${SERVER_KEY} elinka-numbers.prod.mshp-devops.conf ${SERVER_USERNAME}@${SERVER_IP}:nginx'
+                    sh 'ssh -i ${SERVER_KEY} ${SERVER_USERNAME}@${SERVER_IP} sudo certbot --nginx --non-interactive -d elinka-numbers.prod.mshp-devops.com'
+                    sh 'ssh -i ${SERVER_KEY} ${SERVER_USERNAME}@${SERVER_IP} sudo systemctl reload nginx'
+                }
+            }
+        }
     }
 }
